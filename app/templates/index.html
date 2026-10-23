@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>¡Bienvenido a Misión Eco-Reto!</h2>
+<p>Registra, consulta y comparte las acciones que ayudan al planeta.</p>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <h3>{{ stats.total }}</h3>
+    <p>Acciones registradas</p>
+  </div>
+  <div class="stat-card">
+    <h3>{{ stats.agua }} L</h3>
+    <p>Litros de agua ahorrados</p>
+  </div>
+  <div class="stat-card">
+    <h3>{{ stats.reciclaje }} kg</h3>
+    <p>Materiales reciclados</p>
+  </div>
+  <div class="stat-card">
+    <h3>{{ stats.co2 }} kg</h3>
+    <p>CO₂ evitado</p>
+  </div>
+</div>
+
+<h3>Mis acciones registradas</h3>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Título</th>
+      <th>Categoría</th>
+      <th>Descripción</th>
+      <th>Propuesto por</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in acciones %}
+    <tr>
+      <td>{{ a.id }}</td>
+      <td><strong>{{ a.titulo }}</strong></td>
+      <td>
+        <span class="badge 
+          {% if a.categoria == 'Agua' %}badge-agua
+          {% elif a.categoria == 'Reciclaje' %}badge-reciclaje
+          {% else %}badge-energia{% endif %}">
+          {{ a.categoria }}
+        </span>
+      </td>
+      <td>{{ a.descripcion }}</td>
+      <td>{{ a.propuesto_por }}</td>
+      <td>
+        <a href="{{ url_for('main.detalles_accion', id=a.id) }}" class="btn btn-secondary">🔍</a>
+        <a href="{{ url_for('main.editar_accion', id=a.id) }}" class="btn btn-primary">✏️</a>
+        <form action="{{ url_for('main.eliminar_accion', id=a.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Seguro de eliminar esta acción?');">
+          <button type="submit" class="btn btn-danger">🗑️</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="6" style="text-align: center;">No hay acciones registradas aún.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

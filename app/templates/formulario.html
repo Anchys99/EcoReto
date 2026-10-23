@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="form-card">
+  <h2>{% if accion %} Editar acción{% else %} Nueva acción ecológica{% endif %}</h2>
+  
+  <form method="POST">
+    <div class="form-group">
+      <label for="titulo">Título de la acción</label>
+      <input type="text" id="titulo" name="titulo" value="{{ accion.titulo if accion else '' }}" required placeholder="Ej: Cerrar la llave al cepillarse">
+    </div>
+
+    <div class="form-group">
+      <label for="categoria">Categoría</label>
+      <select id="categoria" name="categoria" required>
+        <option value="Agua" {% if accion and accion.categoria == 'Agua' %}selected{% endif %}>Agua</option>
+        <option value="Reciclaje" {% if accion and accion.categoria == 'Reciclaje' %}selected{% endif %}>Reciclaje</option>
+        <option value="Energía" {% if accion and accion.categoria == 'Energía' %}selected{% endif %}>Energía</option>
+        <option value="Movilidad" {% if accion and accion.categoria == 'Movilidad' %}selected{% endif %}>Movilidad</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" name="descripcion" rows="3" required placeholder="Escribe detalles de lo que realizaste...">{{ accion.descripcion if accion else '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="propuesto_por">Propuesto por (Equipo o Nombre)</label>
+      <input type="text" id="propuesto_por" name="propuesto_por" value="{{ accion.propuesto_por if accion else '' }}" required placeholder="Ej: Equipo Verde">
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+      {% if accion %}Actualizar{% else %}+ Guardar acción{% endif %}
+    </button>
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
