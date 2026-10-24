@@ -1,20 +1,23 @@
-import os
+from flask import Blueprint, render_template, request, redirect, url_for, session
 import psycopg
-from psycopg.rows import dict_row
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+import psycopg.rows
+import os
 
 main_bp = Blueprint('main', __name__)
 
 def conectar_db():
-    url = os.environ.get("DATABASE_URL")
+    url = os.getenv("DATABASE_URL")
     if not url:
         raise RuntimeError("Falta configurar la variable DATABASE_URL")
-    return psycopg.connect(url, row_factory=dict_row)
+    return psycopg.connect(url, sslmode='require', row_factory=psycopg.rows.dict_row)
 
 @main_bp.route('/')
 def index():
+    if 'usuario' not in session:
+        return redirect(url_for('main.login'))
+    
+    conexion = conectar_db()
     try:
-        conexion = conectar_db()
         with conexion.cursor() as cursor:
             cursor.execute("""
                 SELECT id, titulo, categoria, descripcion, propuesto_por 
@@ -23,11 +26,10 @@ def index():
             """)
             acciones = cursor.fetchall()
             
-            # Cálculo de métricas básicas
             total_acciones = len(acciones)
             agua_ahorrada = total_acciones * 50
-            reciclaje = total_acciones * 3
-            co2_evitado = total_acciones * 2
+            reciclaje = total_acciones * 5
+            co2_evitado = total_acciones * 45
             
             stats = {
                 'total': total_acciones,
@@ -35,10 +37,10 @@ def index():
                 'reciclaje': reciclaje,
                 'co2': co2_evitado
             }
+    finally:
         conexion.close()
-        return render_template('index.html', acciones=acciones, stats=stats)
-    except Exception as e:
-        return f"Error de conexión o consulta: {e}", 500
+        
+    return render_template('index.html', acciones=acciones, stats=stats)
 
 @main_bp.route('/nueva', methods=['GET', 'POST'])
 def nueva_accion():
@@ -46,8 +48,8 @@ def nueva_accion():
         titulo = request.form.get('titulo')
         categoria = request.form.get('categoria')
         descripcion = request.form.get('descripcion')
-        propuesto_por = request.form.get('propuesto_por', 'Estudiante')
-
+        propuesto_por = request.form.get('propuesto_por')
+        
         conexion = conectar_db()
         try:
             with conexion.cursor() as cursor:
@@ -58,10 +60,10 @@ def nueva_accion():
                 conexion.commit()
         finally:
             conexion.close()
-
+            
         return redirect(url_for('main.index'))
-
-    return render_template('formulario.html', accion=None)
+        
+    return render_template('formulario.html')
 
 @main_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 def editar_accion(id):
@@ -73,20 +75,20 @@ def editar_accion(id):
                 categoria = request.form.get('categoria')
                 descripcion = request.form.get('descripcion')
                 propuesto_por = request.form.get('propuesto_por')
-
+                
                 cursor.execute("""
                     UPDATE acciones 
-                    SET titulo=%s, categoria=%s, descripcion=%s, propuesto_por=%s 
-                    WHERE id=%s
+                    SET titulo = %s, categoria = %s, descripcion = %s, propuesto_por = %s 
+                    WHERE id = %s
                 """, (titulo, categoria, descripcion, propuesto_por, id))
                 conexion.commit()
-                return redirect(url_for('main.index'))
+                return redirect(url_for('main_bp.index'))
             
             cursor.execute("SELECT * FROM acciones WHERE id = %s", (id,))
             accion = cursor.fetchone()
     finally:
         conexion.close()
-
+        
     return render_template('formulario.html', accion=accion)
 
 @main_bp.route('/detalles/<int:id>')
@@ -98,6 +100,7 @@ def detalles_accion(id):
             accion = cursor.fetchone()
     finally:
         conexion.close()
+        
     return render_template('detalles.html', accion=accion)
 
 @main_bp.route('/eliminar/<int:id>', methods=['POST'])
@@ -109,4 +112,18 @@ def eliminar_accion(id):
             conexion.commit()
     finally:
         conexion.close()
+        
     return redirect(url_for('main.index'))
+
+@main_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        usuario = request.form.get('username')
+        session['usuario'] = usuario
+        return redirect(url_for('main.index'))
+    return render_template('login.html')
+
+@main_bp.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    return redirect(url_for('main.login'))

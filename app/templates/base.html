@@ -12,11 +12,12 @@
       <nav>
         <a href="{{ url_for('main.index') }}"> Inicio</a>
         <a href="{{ url_for('main.nueva_accion') }}"> Nueva acción</a>
+        <a href="{{ url_for('main.logout') }}" style="color: #ff6b6b; margin-top: 20px;">Cerrar sesión</a>
       </nav>
     </aside>
     <main class="main-content">
       <div class="top-bar">
-        👤 Hola, estudiante
+    Hola, <strong>{{ session.get('usuario', 'Estudiante') }}</strong>
       </div>
       {% block content %}{% endblock %}
     </main>
