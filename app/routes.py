@@ -118,12 +118,47 @@ def eliminar_accion(id):
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        usuario = request.form.get('username')
-        session['usuario'] = usuario
-        return redirect(url_for('main.index'))
+        username = request.form.get('username')
+        password = request.form.get('password')
+        conexion = conectar_db()
+        try:
+            with conexion.cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM usuarios WHERE username = %s AND password = %s",
+                    (username, password)
+                )
+                user = cursor.fetchone()
+                if user:
+                    session['usuario'] = user['username']
+                    return redirect(url_for('main.index'))
+        finally:
+            conexion.close()
+        # Si falla el login
+        return render_template('login.html', error="Usuario o contraseña incorrectos")
     return render_template('login.html')
 
 @main_bp.route('/logout')
 def logout():
     session.pop('usuario', None)
     return redirect(url_for('main.login'))
+
+@main_bp.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        conexion = conectar_db()
+        try:
+            with conexion.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO usuarios (username, password) VALUES (%s, %s)",
+                    (username, password)
+                )
+                conexion.commit()
+        finally:
+            conexion.close()
+            
+        return redirect(url_for('main.login'))
+        
+    return render_template('registro.html')
