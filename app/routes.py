@@ -82,7 +82,7 @@ def editar_accion(id):
                     WHERE id = %s
                 """, (titulo, categoria, descripcion, propuesto_por, id))
                 conexion.commit()
-                return redirect(url_for('main_bp.index'))
+                return redirect(url_for('main.index'))
             
             cursor.execute("SELECT * FROM acciones WHERE id = %s", (id,))
             accion = cursor.fetchone()
